@@ -1,0 +1,541 @@
+import pilasengine
+pilas = pilasengine.iniciar()
+
+class EscenaPrimera(pilasengine.escenas.Escena):
+    def iniciar(self):
+        self.pilas.fondos.Noche()
+        self.cancion = pilas.musica.cargar("mema.mp3")
+        self.cancion.reproducir(repetir = True)
+        self.Mi_Menu = pilas.actores.Menu(
+		    	[
+				(u"Jugar EcoGame", self.Ir_a_Eco),
+				(u"Jugar Heroes del Ambiente", self.Ir_a_Heroes),
+				(u"Salir", self.Salir_de_Pilas)
+			])
+    def Ir_a_Eco(self):
+        pilas.escenas.EscenaMenu()
+            
+    def Ir_a_Heroes(self):
+        pilas.escenas.EscenaJuegoH()          
+            
+    def Salir_de_Pilas(self): 
+        pilas.terminar()
+    def actualizar(self):
+        pass
+        
+        
+class EscenaMenu(pilasengine.escenas.Escena):
+    def iniciar(self):
+        self.pilas.fondos.Fondo(imagen="LOGOGI.png")
+        dialogo=pilas.actores.Dialogo()
+        self.mono1 = pilas.actores.Mono()
+        self.mono1.x=180
+
+        self.Mi_Menu = pilas.actores.Menu([(u"Jugar", self.Ir_al_juego),(u"Salir", self.Salir_de_Pilas)])
+        
+        self.Mi_Menu.x = -150
+        self.Mi_Menu.escala = 1.3
+	
+        dialogo.decir(self.mono1, "Presiona en mi")
+        dialogo.decir(self.mono1, "Si respondes 10 veces bien ganas,\n si te equivocas 3 veces pierdes")
+								  
+
+        dialogo.comenzar()
+
+    def actualizar(self):
+        pass
+    def Ayuda(self):
+        pilas.escenas.EscenaAyuda()
+		
+    def Salir_de_Pilas(self): 
+        pilas.terminar()	
+		
+    def Ir_al_juego(self): 
+        pilas.escenas.EscenaJuego()		
+
+class EscenaAyuda(pilasengine.escenas.Escena):
+	def iniciar(self):
+		self.fondo_juego=pilas.fondos.Noche()
+		self.fondo_juego.imagen="fondodeljuego1.png"
+		self.Boton_Volver =pilas.interfaz.Boton("Volver al Menu")
+		self.Boton_Volver.y = 220
+		self.Boton_Volver.x = 250
+		self.Boton_Volver.conectar(self.Volver)
+		
+	def Volver(self):	
+		pilas.escenas.EscenaMenu()
+		
+	def actualizar(self):
+		pass	
+
+class EscenaJuego(pilasengine.escenas.Escena):		
+    def iniciar(self):
+            self.nombre=raw_input("Ingrese su nombre: ")
+            self.lista=[["Que es el reciclaje de basura:", "Dar otro uso a la basura", "Quemar basura", "Desechar basura"],
+            ["Como podemos disminuir la contaminacion de plastico?", "Reutilizo", "Tiro en la calle", "Lo quemo"],
+            ["Las plantas son seres vivos como nosotros?", "Si", "No", "Son desechables"], 
+            ["Como ayudo en mi casa si veo que una canilla que pierde agua?", "Comunico a mis padres", "Miro y dejo como estaba", "No le doy importancia"],
+            ["Donde debo depositar la cascara de naranja?:", "En un basurero organico", "En un basurero inorganico", "Tiro en la calle"], 
+            ["Que hacer con la cascara de caramelo si no encuentro basurero?", "Guardo en mi mochila", "Tiro en la calle", "La dejo en un banco"], 
+            ["Cual de estas listas son todas organicas:", "Fresa,oregano,mora", "Uva,carton,pila", "Pera,papel,mani"],
+            ["Es necesario colocar basurero en mi patio?:", "Si es necesario", "Tal vez", "No es necesario"],
+            ["Que hago con las pilas que ya no funcionan:","Las separo de las demas basuras", "Las entierro","Las quemo"],
+            ["Que son las tres R","Reducir,Reciclar,Reutilizar","Reciclar,reducir,Desechar","Ninguno es correcto"]]
+
+            self.fondo_juego = pilas.fondos.Tarde()
+            self.puntaje = pilas.actores.Puntaje(color="rojo") #self
+            self.puntaje.x = -150 #self
+            self.puntaje.y = -190 #self
+            self.puntaje.valor = 0 #añadido            
+            
+            self.correctosaparecer=pilas.actores.Texto("Correctos:")
+            self.correctosaparecer.x=-220
+            self.correctosaparecer.y=-190
+            self.correctosaparecer.escala=0.6
+            
+            self.error=pilas.actores.Puntaje(color="rojo")
+            self.error.valor=0
+            self.error.x=-150
+            self.error.y=-220
+            
+            self.incorrectosaparecer=pilas.actores.Texto("Incorrectos:")
+            self.incorrectosaparecer.x=-230
+            self.incorrectosaparecer.y=-220
+            self.incorrectosaparecer.escala=0.6
+            
+            self.mono = pilas.actores.Mono()
+            self.mono.escala = 0.8 #añadido, el mono era muy grande
+            self.mono.aprender('arrastrable') #modificado
+            self.mono.aprender('MoverseConElTeclado') #modificado
+            self.mono.decir("Bienvenido/a "+ self.nombre + " puedes arrastrarme")
+            self.mono.x=[0,200],1
+		
+            self.Boton_Volver =pilas.interfaz.Boton("Volver al Menu")
+            self.Boton_Volver.y = -220
+            self.Boton_Volver.x = 250
+            self.Boton_Volver.conectar(self.Volver)
+		
+		
+		#Agrego las colisiones
+            pilas.colisiones.agregar('banana', 'mono', self.el_mono_come)#añadido
+		
+		#Agrego tarea
+            pilas.tareas.agregar(3, self.Preguntando)
+		
+    def Reiniciar(self):
+    # Obtiene todos los actores de la pantalla.
+        actores = pilas.actores.listar_actores()
+
+    # Elimina todos los actores excepto el fondo y el puntaje
+        for actor in actores:
+                    if actor not in [self.puntaje, self.fondo_juego, self.mono,self.error,self.correctosaparecer,self.incorrectosaparecer,self.Boton_Volver]:
+                            actor.eliminar()
+
+    # Genera una pregunta nueva
+        self.Preguntando()
+		
+	
+    def Preguntando(self):
+                    self.b1=pilas.actores.Banana()
+                    self.b1.x=-300
+                    self.b1.y=100
+                    self.b1.esverdadera=False
+                    self.b2=pilas.actores.Banana()
+                    self.b2.x=-300
+                    self.b2.y=0
+                    self.b2.esverdadera=False
+                    self.b3=pilas.actores.Banana()
+                    self.b3.x=-300
+                    self.b3.y=-100
+                    self.b3.esverdadera=False
+                    
+                    self.poslista=pilas.azar(0,9)
+                    self.encuentrapreg=self.lista[self.poslista][0]
+                    self.mostrar_pregunta=pilas.actores.Texto(self.encuentrapreg)
+                    self.mostrar_pregunta.y=220
+                    self.mostrar_pregunta.escala=0.6
+                    self.respuesta_correcta = self.lista[self.poslista][1] #Respuesta Correcta
+                    self.respuesta_incorrecta_1 = self.lista[self.poslista][2] #Respuesta incorrecta 1
+                    self.respuesta_incorrecta_2 = self.lista[self.poslista][3] #Respuesta incorrecta 2
+                    self.rta_1 = pilas.actores.Texto("")
+                    self.rta_1.x=-250
+                    self.rta_1.y=100
+                    self.rta_1.escala=0.5
+                    self.rta_2 = pilas.actores.Texto("")
+                    self.rta_2.x=-250
+                    self.rta_2.y=0
+                    self.rta_2.escala=0.5
+                    self.rta_3 = pilas.actores.Texto("")
+                    self.rta_3.x=-250
+                    self.rta_3.y=-100
+                    self.rta_3.escala=0.5
+		
+		#Banana verdadera
+                    self.bananas_posibles = [self.b1,self.b2,self.b3]
+                    self.textos_posibles = [self.rta_1,self.rta_2,self.rta_3]
+                    self.indiceok=pilas.azar(0,2)
+                    self.banana_verdadera=self.bananas_posibles[self.indiceok]
+                    self.banana_verdadera.esverdadera=True
+                    self.texto_respuesta_verdadera=self.textos_posibles[self.indiceok]
+                    self.texto_respuesta_verdadera.texto=str(self.respuesta_correcta)
+                    if self.b1.esverdadera:
+			self.rta_1.texto=str(self.respuesta_correcta)
+			self.rta_2.texto = str(self.respuesta_incorrecta_1)
+			self.rta_3.texto = str(self.respuesta_incorrecta_2)
+                    elif self.b2.esverdadera:
+			self.rta_2.texto=str(self.respuesta_correcta)
+			self.rta_1.texto = str(self.respuesta_incorrecta_1)
+			self.rta_3.texto = str(self.respuesta_incorrecta_2)
+                    elif self.b3.esverdadera:
+			self.rta_3.texto= str(self.respuesta_correcta)
+			self.rta_1.texto = str(self.respuesta_incorrecta_1)
+			self.rta_2.texto = str(self.respuesta_incorrecta_2)
+				
+    def ganaste(self):
+		actores = pilas.actores.listar_actores()
+
+    # Elimina todos los actores excepto el fondo y el puntaje
+		for actor in actores:
+			if actor not in [self.mono]:
+				actor.eliminar()
+		self.fondo_juego=pilas.fondos.Noche()
+		self.Boton_Volver =pilas.interfaz.Boton("Volver al Menu")
+		self.Boton_Volver.y = 220
+		self.Boton_Volver.x = 250
+		self.Boton_Volver.conectar(self.Volver)
+		self.puntajefinal=pilas.actores.Texto(str(self.puntaje.valor))
+		self.puntajefinal.escala=2
+		self.cartelfelicidades=pilas.actores.Texto("Felicidades "+self.nombre+" has ganado")
+		self.cartelfelicidades.y=220
+		self.cartelfelicidades=pilas.actores.Texto("Comelon esta feliz y lleno")
+		self.cartelfelicidades.y=150
+		self.cartelpuntaje=pilas.actores.Texto("Tu puntaje es: ")
+		self.cartelpuntaje.x=-100
+		self.errorestotales=pilas.actores.Texto(str(self.error.valor))
+		self.errorestotales.y=-100
+		self.errorestotales.escala=2
+		self.cartelerror=pilas.actores.Texto("Cantidad de errores: ")
+		self.cartelerror.x=-150
+		self.cartelerror.y=-100
+		self.mono.sonreir()
+	
+    def perdiste(self):
+		actores = pilas.actores.listar_actores()
+
+    # Elimina todos los actores excepto el fondo y el puntaje
+		for actor in actores:
+			if actor not in [self.mono]:
+				actor.eliminar()
+		self.fondo_juego=pilas.fondos.Noche()
+		self.Boton_Volver =pilas.interfaz.Boton("Volver al Menú")
+		self.Boton_Volver.y = 220
+		self.Boton_Volver.x = 250
+		self.Boton_Volver.conectar(self.Volver)
+		self.puntajefinal=pilas.actores.Texto(str(self.puntaje.valor))
+		self.puntajefinal.escala=2
+		self.cartelfelicidades=pilas.actores.Texto(self.nombre+ " PERDISTE :(")
+		self.cartelfelicidades.y=220
+		self.cartelfelicidades=pilas.actores.Texto("Comelon se enfermo")
+		self.cartelfelicidades.y=150
+		self.cartelpuntaje=pilas.actores.Texto("Tu puntaje es: ")
+		self.cartelpuntaje.x=-100
+		self.errorestotales=pilas.actores.Texto(str(self.error.valor))
+		self.errorestotales.y=-100
+		self.errorestotales.escala=2
+		self.cartelerror=pilas.actores.Texto("Cantidad de errores: ")
+		self.cartelerror.x=-150
+		self.cartelerror.y=-100
+		self.mono.gritar()
+		
+    def Volver(self):	
+        pilas.escenas.EscenaMenu()
+		
+    def actualizar(self):
+        pass	
+		
+
+    def el_mono_come(self, bananas, mono):
+		if not bananas.esverdadera: #bananas es la banana colisionada
+			if self.error.valor<2:
+				pilas.camara.vibrar()
+				bananas.eliminar()
+				mono.gritar()
+				mono.decir("Ups..te equivocaste")
+				self.error.aumentar() #aumenta 1 error. En total puede ser hasta 3 errores.
+				pilas.tareas.agregar(3, self.Reiniciar)
+				
+			else:
+				pilas.avisar("Fin del juego")
+				self.error.aumentar()
+				self.perdiste()
+				
+		else:
+			if self.puntaje.valor<9:
+				bananas.eliminar() #hay que eliminar la banana colisionada
+				mono.rotacion=[0,360]
+				mono.decir("Excelente!")
+				estrella = pilas.actores.Estrella()
+				estrella.x = bananas.x
+				estrella.y = bananas.y
+				estrella.escala = 0.2
+				estrella.escala = [2, 1] * 2
+				self.puntaje.aumentar()
+				pilas.tareas.agregar(3, self.Reiniciar)
+			else:
+				pilas.avisar("Felicidades has ganado")
+				self.puntaje.aumentar()
+				self.ganaste()	
+		
+    def Volver(self):	
+        pilas.escenas.EscenaMenu()
+		
+    def actualizar(self):
+        pass
+ 
+
+'''class EscenaMenu1(pilasengine.escenas.Escena):
+    def iniciar(self):
+        dialogo=pilas.actores.Dialogo()
+        self.mono1 = pilas.actores.Mono()
+        self.mono1.x=180
+        self.menu_inicial = pilas.actores.Menu(
+                [
+                    (u'iniciar juego', self.iniciar_juego),
+                    (u'volver', self.salir_del_juego),
+                ])
+        self.pilas.fondos.Fondo(imagen="logo.png")
+        self.menu_inicial.escala = 2
+        self.menu_inicial.x = [200, 0]
+        #self.cancion = pilas.musica.cargar("mema.mp3")
+        #self.cancion.reproducir(repetir = True)
+        dialogo.decir(self.mono1, "Presiona en mi")
+        dialogo.decir(self.mono1, "Junta la basura organica en el basurero verde, \n la basura inorganica en el azul")
+        dialogo.comenzar()
+
+
+    def iniciar_juego(self):
+        pilas.escena.EscenaJuegoH()
+    
+    def salir_del_juego(self):
+        pilas.escena.EscenaPrimera()
+    
+    def actualizar(self):
+        pass
+'''
+class EscenaJuegoH(pilasengine.escenas.Escena):
+    def iniciar(self):
+        self.dialogo=pilas.actores.Dialogo()
+        self.mono1 = pilas.actores.Mono()
+        self.mono1.x=180
+        self.pilas.fondos.Fondo(imagen="logo.png")
+        self.menu_inicial = pilas.actores.Menu(
+                [
+                    (u'iniciar juego', self.iniciar_juego),
+                    (u'volver', self.salir_del_juego),
+                ])
+   
+        self.menu_inicial.escala = 1
+        self.menu_inicial.x = [200, 0]
+        #self.cancion = pilas.musica.cargar("mema.mp3")
+        #self.cancion.reproducir(repetir = True)
+        self.dialogo.decir(self.mono1, "Presiona en mi")
+        self.dialogo.decir(self.mono1, "Junta la basura organica en el basurero verde, \n la basura inorganica en el azul")
+        self.dialogo.comenzar()
+    def iniciar_juego(self):
+        actores = pilas.actores.listar_actores()
+
+    # Elimina todos los actores excepto el fondo y el puntaje
+        for actor in actores:
+            actor.eliminar()
+
+        global exitos 
+        exitos = 0
+        
+        self.pilas.fondos.Tarde()
+        self.fondo = pilas.fondos.Fondo()
+        self.fondo.imagen = pilas.imagenes.cargar('ciudad.png')
+        self.fondo.escala = [0.4]
+        self.fondo.y = 20
+
+        self.basurero = pilas.actores.Actor(imagen="Funciona1 INO.png")
+        self.basurero.x = 100
+        self.basurero.escala = [0.2]
+        self.basurero.y = [-150]
+        
+
+        self.basurero2 = pilas.actores.Actor(imagen="Funciona2ORG.png")
+        self.basurero2.x = -100
+        self.basurero2.escala = [0.2]
+        self.basurero2.y = [-150]
+
+       
+        self.manzana = pilas.actores.Actor(imagen="manzana.png")
+        self.manzana.aprender("Arrastrable")
+        self.manzana.escala = [0.6]
+        self.manzana.y = [100]
+        self.manzana.tipo= "org"
+
+
+        self.lechuga =pilas.actores.Actor(imagen="lechuga.png")
+        self.lechuga.aprender("Arrastrable")
+        self.lechuga.escala = [0.2]
+        self.lechuga.x = 200
+        self.lechuga.tipo= "org"
+
+        self.BOLIGRAFO = pilas.actores.Actor(imagen="BOLIGRAFO.png")
+        self.BOLIGRAFO.aprender("Arrastrable")
+        self.BOLIGRAFO.escala = [0.9]
+        self.BOLIGRAFO.x = -200
+        self.BOLIGRAFO.tipo= "ino"
+        
+        self.KETCHUP = pilas.actores.Actor(imagen="KETCHUP.png")
+        self.KETCHUP.aprender("Arrastrable")
+        self.KETCHUP.escala = [0.5]
+        self.KETCHUP.y = [100]
+        self.KETCHUP.x = [-150]
+        self.KETCHUP.tipo= "ino"
+        
+        self.CURITA = pilas.actores.Actor(imagen="CURITA.png")
+        self.CURITA.aprender("arrastrable")
+        self.CURITA.escala=[0.9]
+        self.CURITA.x = [+150]
+        self.CURITA.y = [200]
+        self.CURITA.tipo= "ino"
+        
+        self.BOTELLITA = pilas.actores.Actor(imagen="BOTELLITA.png")
+        self.BOTELLITA.aprender("arrastrable")
+        self.BOTELLITA.escala=[0.1]
+        self.BOTELLITA.x = [+100]
+        self.BOTELLITA.y = [50]
+        self.BOTELLITA.tipo= "ino"
+        
+        self.pescado = pilas.actores.Actor(imagen="pescado.png")
+        self.pescado.aprender("arrastrable")
+        self.pescado.escala=[0.1]
+        self.pescado.x = [250]
+        self.pescado.y =[70]
+        self.pescado.tipo= "org" 
+              
+        self.MAYONESA = pilas.actores.Actor(imagen="MAYONESA.png")
+        self.MAYONESA.aprender("arrastrable")
+        self.MAYONESA.escala=[0.3]
+        self.MAYONESA.y = [200]
+        self.MAYONESA.x = [-70]
+        self.MAYONESA.tipo="ino"
+        
+        self.MOSTAZA = pilas.actores.Actor(imagen="MOSTAZA.png")
+        self.MOSTAZA.aprender("arrastrable")
+        self.MOSTAZA.escala=[0.5]
+        self.MOSTAZA.y = [160]
+        self.MOSTAZA.x = [-270]
+        self.MOSTAZA.tipo= "ino"
+        
+        self.frutita = pilas.actores.Actor(imagen="frutita.png")
+        self.frutita.aprender("arrastrable")
+        self.frutita.escala=[0.1]
+        self.frutita.y = [150]
+        self.frutita.x = [100]
+        self.frutita.tipo= "org"
+        
+        pilas.colisiones.agregar(self.frutita, self.basurero, self.cuando_colisiona_inorganico)
+        pilas.colisiones.agregar(self.pescado, self.basurero, self.cuando_colisiona_inorganico)
+        pilas.colisiones.agregar(self.lechuga, self.basurero, self.cuando_colisiona_inorganico)
+        pilas.colisiones.agregar(self.manzana, self.basurero, self.cuando_colisiona_inorganico)
+
+        pilas.colisiones.agregar(self.CURITA, self.basurero, self.cuando_colisiona_inorganico)
+        pilas.colisiones.agregar(self.BOTELLITA, self.basurero, self.cuando_colisiona_inorganico)
+        pilas.colisiones.agregar(self.MOSTAZA, self.basurero, self.cuando_colisiona_inorganico)
+        pilas.colisiones.agregar(self.KETCHUP, self.basurero, self.cuando_colisiona_inorganico)
+        pilas.colisiones.agregar(self.BOLIGRAFO, self.basurero, self.cuando_colisiona_inorganico)
+        pilas.colisiones.agregar(self.MAYONESA, self.basurero, self.cuando_colisiona_inorganico)
+
+        pilas.colisiones.agregar(self.frutita, self.basurero2, self.cuando_colisiona_organico)
+        pilas.colisiones.agregar(self.pescado, self.basurero2, self.cuando_colisiona_organico)
+        pilas.colisiones.agregar(self.lechuga, self.basurero2, self.cuando_colisiona_organico)
+        pilas.colisiones.agregar(self.manzana, self.basurero2, self.cuando_colisiona_organico)
+        
+        pilas.colisiones.agregar(self.CURITA, self.basurero2, self.cuando_colisiona_organico)
+        pilas.colisiones.agregar(self.BOTELLITA, self.basurero2, self.cuando_colisiona_organico)
+        pilas.colisiones.agregar(self.MOSTAZA, self.basurero2, self.cuando_colisiona_organico)
+        pilas.colisiones.agregar(self.KETCHUP, self.basurero2, self.cuando_colisiona_organico)
+        pilas.colisiones.agregar(self.BOLIGRAFO, self.basurero2, self.cuando_colisiona_organico)
+        pilas.colisiones.agregar(self.MAYONESA, self.basurero2, self.cuando_colisiona_organico)
+        
+        self.puntos = pilas.actores.Puntaje(x=230, y=200, color=pilas.colores.blanco)
+        self.puntos.magnitud = 40
+
+        self.error= pilas.actores.Puntaje(x=-230, y=200, color=pilas.colores.rojo)
+        self.error.magnitud= 40
+                    
+    def fin_de_juego(self):
+            #global fin_de_juego
+        global exitos
+        pilas.avisar("Terminaste. Conseguiste %d puntos" %(exitos))
+        pilas.escena_actual().tareas.eliminar_todas()
+    
+    def cuando_colisiona_organico (self,basura,basureros):
+        global exitos
+        if basura.tipo=="org" :
+            exitos += 1
+            basura.eliminar()
+            self.puntos.escala = 0
+            pilas.utils.interpolar(self.puntos, 'escala', 1, duracion=0.5, tipo='elastico')
+            self.puntos.aumentar(1)
+            basureros.decir("genial!!")
+            if exitos == 10 :
+                self.fin_de_juego()
+
+        elif self.error.valor<2:
+            self.error.escala = 0
+            pilas.utils.interpolar(self.error, 'escala', 1, duracion=0.5, tipo='elastico')
+            self.error.aumentar(1)
+            basureros.decir("ups basurero equivocado!!")
+            pilas.camara.vibrar()
+        else:
+            pilas.avisar("Fin del juego")
+            self.error.aumentar()
+                #self.perdiste()
+
+        
+    def cuando_colisiona_inorganico(self, basura, basureros):
+        global exitos
+        if basura.tipo=="ino":
+            exitos = exitos + 1
+            basura.eliminar()
+            self.puntos.escala = 0
+            pilas.utils.interpolar(self.puntos, 'escala', 1, duracion=0.5, tipo='elastico')
+            self.puntos.aumentar(1)
+            basureros.decir("exelente!!")
+
+        elif self.error.valor<2:
+            self.error.escala = 0
+            pilas.utils.interpolar(self.error, 'escala', 1, duracion=0.5, tipo='elastico')
+            self.error.aumentar(1)
+            basureros.decir("ups basurero equivocado!!")
+            pilas.camara.vibrar()
+      
+        else:
+            pilas.avisar("Fin del juego")
+            self.error.aumentar()
+    
+    def Volver(self):	
+        pilas.escenas.EscenaJuegoH()
+		
+    def actualizar(self):
+        pass 
+    def salir_del_juego(self):
+        pilas.terminar()
+
+
+#pilas.escenas.vincular(EscenaAyuda)
+pilas.escenas.vincular(EscenaMenu)
+pilas.escenas.vincular(EscenaJuego)
+
+#pilas.escenas.vincular(EscenaMenu1)
+pilas.escenas.vincular(EscenaJuegoH)
+pilas.escenas.vincular(EscenaPrimera)
+pilas.escenas.EscenaPrimera()
+
+
+pilas.fondos.Fondo(imagen="LOGOGI.png")
+pilas.ejecutar()
